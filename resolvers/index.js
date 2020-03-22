@@ -5,4 +5,6 @@ const sellerResolver = require('./sellerResolver')
 
 const resolvers = merge(customerResolver, sellerResolver)
 
+
+
 module.exports = resolvers

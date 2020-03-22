@@ -9,5 +9,5 @@ const typeDef = gql`
 `
 
 module.exports = {
-    typeDefs: [typeDef, customerType, sellerType]
+  typeDefs: [typeDef, customerType]
 }
