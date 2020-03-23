@@ -4,10 +4,10 @@ const { ApolloServer, gql } = require('apollo-server')
 const axios = require('axios')
 const url = 'http://54.169.56.221:3000/customers'
 
+const chatUrl = 'http://54.169.56.221:3000/chats'
+
 
 const typeDefs = gql`
-
-
     type Customer {
         _id : ID
         slug : String
@@ -99,13 +99,19 @@ const typeDefs = gql`
         customerDashboard(token : String): DashboardPayload
     }
 
+    type Chat{
+        text : String
+        role : String
+        created_at : String
+    }
+
     type Link {
         id : String
         link : String
         seller_slug : String
         customer_slug : String
         created_at : String
-        chats : [String]
+        chats : [Chat]
         _id : ID
     }
 
@@ -117,6 +123,26 @@ const typeDefs = gql`
         message : String
         status : String
         payload : createLink
+    }
+
+    type allChat{
+        chats : Link
+    }
+
+    type findAllChat{
+        message : String
+        status : String
+        payload : allChat
+    }
+
+    type sendChatPayload{
+        chat : Link
+    }
+
+    type sendChat{
+        message : String
+        status : String
+        payload : sendChatPayload
     }
 
     type Mutation {
@@ -149,6 +175,17 @@ const typeDefs = gql`
             link_id : String
             token : String
         ) : deletePayload
+
+        chatFindAll(
+            link : String
+            token : String
+        ) : findAllChat
+
+        sendChat(
+            link : String
+            text : String
+            token : String
+        ) : sendChat
     }
 `
 
@@ -156,7 +193,6 @@ const resolvers = {
     Query: {
         customerDashboard: async (parent, args, context) => {
             try {
-                console.log('okkk')
                 const { data } = await axios({
                     method: 'GET',
                     url: `${url}/dashboard`,
@@ -164,11 +200,11 @@ const resolvers = {
                         token: args.token
                     }
                 })
-                console.log(data.payload.sellers[0].links)
+                console.log(data)
                 return data
             }
             catch (err) {
-                console.log(err)
+                console.log(err.response.data)
             }
         }
 
@@ -233,7 +269,7 @@ const resolvers = {
                 return data
             }
             catch (err) {
-                console.log(err.message)
+                console.log(err.response.data)
             }
         },
         customerCreateLink: async (parent, args, context) => {
@@ -262,6 +298,47 @@ const resolvers = {
                 const { data } = await axios({
                     method: 'PATCH',
                     url: `${url}/destroyLink/${args.link_id}`,
+                    headers: {
+                        token: args.token
+                    }
+                })
+                console.log(data)
+                return data
+            }
+            catch (err) {
+                console.log(err.response.data)
+            }
+        },
+        chatFindAll: async (parent, args, context) => {
+            const obj = {
+                link: args.link
+            }
+            try {
+                const { data } = await axios({
+                    method: "POST",
+                    url: `${chatUrl}`,
+                    data: obj,
+                    headers: {
+                        token: args.token
+                    }
+                })
+                return data
+            }
+            catch (err) {
+                console.log(err.response.data)
+            }
+        },
+        sendChat: async (parent, args, context) => {
+            try {
+                const obj = {
+                    link: args.link,
+                    text: args.text
+                }
+                console.log(obj, args.token)
+                const { data } = await axios({
+                    method: "POST",
+                    url: `${chatUrl}/sendChat`,
+                    data: obj,
                     headers: {
                         token: args.token
                     }
@@ -537,6 +614,7 @@ const sellerResolvers = {
             }
             catch (err) {
                 console.log(err.response.data)
+                return err.response.data
             }
         },
         createChatBot: async (parent, args, context) => {
